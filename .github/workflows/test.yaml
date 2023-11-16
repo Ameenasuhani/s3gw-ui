@@ -9,12 +9,72 @@ on:
       - "*"
 
 jobs:
-  frontend-lint:
+  # frontend-lint:
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Checkout s3gw UI
+  #       uses: actions/checkout@v3
+
+  #     - name: Set up node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 16
+  #         cache: npm
+  #         cache-dependency-path: src/frontend/package-lock.json
+
+  #     - name: Install Dependencies
+  #       working-directory: src/frontend
+  #       run: npm ci
+
+  #     - name: Run Lint
+  #       working-directory: src/frontend
+  #       run: npm run lint
+
+  # frontend-test:
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Checkout s3gw UI
+  #       uses: actions/checkout@v3
+
+  #     - name: Set up node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 16
+  #         cache: npm
+  #         cache-dependency-path: src/frontend/package-lock.json
+
+  #     - name: Install Dependencies
+  #       working-directory: src/frontend
+  #       run: npm ci
+
+  #     - name: Run Unit Tests
+  #       working-directory: src/frontend
+  #       run: npm run test:ci
+ 
+  test-frontend-e2e:    
     runs-on: ubuntu-latest
+
+    services:
+      my-s3gw:
+        image: quay.io/s3gw/s3gw:latest
+        ports:
+          - 7480:7480
 
     steps:
       - name: Checkout s3gw UI
         uses: actions/checkout@v3
+
+      - name: Setup and run UI Backend
+        run: |
+              cd src \
+              && python3 -m venv venv \
+              && . venv/bin/activate \
+              && pip install -r requirements.txt -r requirements-dev.txt \
+              && . venv/bin/activate \
+              && mkdir -p frontend/dist/s3gw-ui \
+              && S3GW_DEBUG=1 S3GW_SERVICE_URL=http://127.0.0.1:7480 python3 ./s3gw_ui_backend.py &
 
       - name: Set up node.js
         uses: actions/setup-node@v3
@@ -27,108 +87,86 @@ jobs:
         working-directory: src/frontend
         run: npm ci
 
-      - name: Run Lint
+      - name: Run E2E Tests
         working-directory: src/frontend
-        run: npm run lint
+        run: npm run e2e:ci
 
-  frontend-test:
-    runs-on: ubuntu-latest
+  # backend-lint:
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout s3gw UI
-        uses: actions/checkout@v3
+  #   steps:
+  #     - name: Checkout s3gw UI
+  #       uses: actions/checkout@v3
 
-      - name: Set up node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: npm
-          cache-dependency-path: src/frontend/package-lock.json
+  #     - name: Install Python 3.10
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: "3.10"
+  #         cache: "pip"
 
-      - name: Install Dependencies
-        working-directory: src/frontend
-        run: npm ci
+  #     - name: Install tox
+  #       run: pip install tox
 
-      - name: Run Unit Tests
-        working-directory: src/frontend
-        run: npm run test:ci
+  #     - name: Check code format
+  #       working-directory: src
+  #       run: tox -e lint
 
-  backend-lint:
-    runs-on: ubuntu-latest
+  # backend-types:
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout s3gw UI
-        uses: actions/checkout@v3
+  #   steps:
+  #     - name: Checkout s3gw UI
+  #       uses: actions/checkout@v3
 
-      - name: Install Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-          cache: "pip"
+  #     - name: Install Python 3.10
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: "3.10"
+  #         cache: "pip"
 
-      - name: Install tox
-        run: pip install tox
+  #     - name: Install tox
+  #       run: pip install tox
 
-      - name: Check code format
-        working-directory: src
-        run: tox -e lint
+  #     - name: Check types
+  #       working-directory: src
+  #       run: tox -e types
 
-  backend-types:
-    runs-on: ubuntu-latest
+  # backend-unit-tests:
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout s3gw UI
-        uses: actions/checkout@v3
+  #   steps:
+  #     - name: Checkout s3gw UI
+  #       uses: actions/checkout@v3
 
-      - name: Install Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-          cache: "pip"
+  #     - name: Set up node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 16
+  #         cache: npm
+  #         cache-dependency-path: src/frontend/package-lock.json
 
-      - name: Install tox
-        run: pip install tox
+  #     - name: Install Dependencies
+  #       working-directory: src/frontend
+  #       run: npm ci
 
-      - name: Check types
-        working-directory: src
-        run: tox -e types
+  #     - name: Install Python 3.10
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: "3.10"
+  #         cache: "pip"
 
-  backend-unit-tests:
-    runs-on: ubuntu-latest
+  #     - name: Install tox
+  #       run: pip install tox
 
-    steps:
-      - name: Checkout s3gw UI
-        uses: actions/checkout@v3
+  #     - name: Build Frontend
+  #       working-directory: src/frontend
+  #       run: npx ng build
 
-      - name: Set up node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: npm
-          cache-dependency-path: src/frontend/package-lock.json
+  #     - name: Run unit tests
+  #       working-directory: src
+  #       run: tox -e py310
 
-      - name: Install Dependencies
-        working-directory: src/frontend
-        run: npm ci
-
-      - name: Install Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-          cache: "pip"
-
-      - name: Install tox
-        run: pip install tox
-
-      - name: Build Frontend
-        working-directory: src/frontend
-        run: npx ng build
-
-      - name: Run unit tests
-        working-directory: src
-        run: tox -e py310
-
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v3
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  #     - name: Upload coverage reports to Codecov
+  #       uses: codecov/codecov-action@v3
+  #       env:
+  #         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
